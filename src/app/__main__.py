@@ -18,7 +18,11 @@ else:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from src import bridge
 
-ROOT = Path(__file__).resolve().parents[2]
+if "__compiled__" in globals():
+    ROOT = Path(__file__).resolve().parent
+else:
+    ROOT = Path(__file__).resolve().parents[2]
+
 LANG_DIR = ROOT / "languages"
 
 RULE_TYPES = {

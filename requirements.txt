@@ -1,0 +1,2 @@
+pythonnet==3.1.0
+pyside6==6.7.2
