@@ -224,6 +224,13 @@ class Main(QMainWindow):
             a.triggered.connect(fn)
             m.addAction(a)
 
+        from menu_help import HelpDialog   # match your existing import style
+
+        help_menu = self.menuBar().addMenu("&Help")
+        a = QAction("&Authoring Guide", self)
+        a.triggered.connect(lambda: HelpDialog(ROOT / "docs", parent=self).exec())
+        help_menu.addAction(a)
+
         self.load(LANG_DIR / "example.json")
         self.inp.setPlainText("Hello, the field of Enna is ablaze with flowers!")
         self.resize(1150, 700)
