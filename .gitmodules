@@ -1,0 +1,3 @@
+[submodule "src/lib/PLGL"]
+	path = src/lib/PLGL
+	url = git@github-lynn:lynnhubbz/PLGLib.git

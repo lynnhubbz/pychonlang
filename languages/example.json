@@ -1,0 +1,29 @@
+{
+  "name": "Example",
+  "author": "",
+  "description": "Starter language (Japanese-ish). Edit everything in the GUI.",
+  "seed": 6,
+  "auto_casing": true,
+  "letter_pathing": "Inclusion",
+  "syllable_skew_min": 0.8,
+  "syllable_skew_max": 1.5,
+  "consonants": "k s t n h m y r w g z d p b",
+  "vowels": "a i u e o",
+  "groups": [
+    {"key": "V", "name": "Vowels", "letters": {"a": 5, "i": 5, "u": 5, "e": 5, "o": 5}},
+    {"key": "C", "name": "Consonants", "letters": {"k": 5, "s": 4, "t": 4, "n": 3, "h": 1, "m": 2, "y": 2, "r": 2, "w": 0.5, "g": 5, "z": 1, "d": 5, "b": 4, "p": 2}},
+    {"key": "N", "name": "Final N", "letters": {"n": 1}}
+  ],
+  "syllables": [
+    {"pattern": "CV", "weight": 1.0},
+    {"pattern": "N", "weight": 0.1}
+  ],
+  "rules": [
+    {"type": "exclude_after", "after": "y", "group": "V", "exclude": "ie"},
+    {"type": "exclude_after", "after": "w", "group": "V", "exclude": "iueo"},
+    {"type": "syllable_only_last", "syllable": "N"}
+  ],
+  "punctuation": {".": "。", ",": "、", "?": "？", "!": "！"},
+  "vocabulary": {"hello": "kira"},
+  "roots": {}
+}
