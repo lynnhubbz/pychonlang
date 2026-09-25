@@ -1,25 +1,30 @@
-Based on everything built in this thread, here's the actual state:
 
-**Working:**
-1. Phonetic generation (consonants/vowels → weighted letter groups → syllable patterns)
-2. 5 contextual rule types (exclusion-based)
-3. Exact-match lexicon overrides (`vocabulary`, `roots`)
-4. Punctuation remapping
-5. Live preview, seed-based variation, GUI validation
-6. In-app help docs (dark/light GFM rendering)
-7. Standalone Windows build + release pipeline
 
-**Gaps, roughly by effort to add:**
+## What it has
 
-| Gap | Why it's missing | Effort |
-|---|---|---|
-| Affixes (prefixes/suffixes) | PLGL supports them; never wired into the GUI/JSON schema | Small — mostly GUI + schema work |
-| Custom rule types beyond the 5 | Only a fixed switch statement in `JsonLanguage.cs` | Small per rule, but each one needs a C# edit + rebuild |
-| RTL layout for the output widget | One Qt property, just never set | Trivial |
-| Custom/invented glyphs (non-Unicode scripts) | Needs PUA codepoints + bundled font, no code exists yet | Medium |
-| Logographic generation mode | PLGL is phonetic-only; would need an entirely separate generation path you write yourself | Large — real feature, not a tweak |
-| Structured lexicon (parts of speech, grammar, searchable dictionary view) | `vocabulary`/`roots` are flat string maps only | Medium |
-| Non-Windows builds | Never tested; pythonnet/CoreCLR on Linux/macOS unverified | Unknown until tried |
-| TOML instead of JSON | Explicitly on your repo's Todo, not started | Medium — full C# parser rewrite |
+1. **Phonology (letter-level)** — weighted consonant/vowel groups, syllable pattern composition (`CV`, `CVC`...), 5 contextual exclusion rules, seed-based variation, punctuation remapping.
+2. **Morphology (surface only)** — exact-match `vocabulary`/`roots` overrides. PLGL's affix engine exists underneath but isn't wired into your GUI/schema.
+3. **Tooling** — live preview, validation, GUI editing, standalone Windows build, CI release pipeline, in-app help docs.
 
-**Worth being blunt about the bigger picture:** this is a phonology + basic morphology generator with a nice editing GUI — genuinely useful for what most conlangers actually need first (how words *sound*). Grammar (syntax, cases, tense systems), semantics, and non-phonetic writing systems are entirely separate problems PLGL was never built to solve, and none of that exists in any form yet.
+## What it lacks, how to add it, and rough fulfillment
+
+| Layer | Status | What's missing | How to add |
+|---|---|---|---|
+| **Phonology** | ~50% | No true phonemic modeling (IPA features, place/manner/voicing) — just opaque letters | Add feature metadata to `letters` (`{symbol, ipa, manner, place, voice}`); rewrite rules to target feature classes instead of literal letters. Data-model change, medium effort. |
+| **Morphology** | ~15% | No conjugation/declension, no affix UI, no agglutination/fusion typology | Wire up PLGL's existing prefix/suffix engine into a new GUI tab + schema fields (`prefixes`, `suffixes`, attachment rules). Medium effort — the underlying capability already exists in PLGL, just unexposed. |
+| **Syntax** | 0% | No word order, no case marking, no agreement, no sentence structure at all — words translate 1:1 in place | Biggest gap. Needs a new pipeline stage: parse input into a rough syntactic structure (subject/verb/object at minimum), then reorder + inflect per your language's rules (SOV vs SVO, case suffixes) before per-word generation runs. Large effort — a real feature, not a tweak. |
+| **Lexicon/Semantics** | ~20% | Flat word-pair overrides only; no meaning tracking, no derivation, no semantic fields | Extend `vocabulary` into a richer structure (`{word, meaning, part_of_speech, derived_from}`); add a searchable dictionary view. Medium effort, mostly GUI + schema. |
+| **Orthography/ writing system/ Logograms / Logographs** | ~10% | Output is just Latin/Unicode text through PLGL; no logograms, no invented scripts, no distinct spelling-vs-pronunciation | Custom scripts: PUA codepoints + bundled fonts (already discussed). Logograms: separate non-phonetic generation path you'd write yourself. Large effort for true logography, smaller for custom-script Latin substitution. |
+| **Pragmatics** | 0% | No register, politeness, discourse markers | Rarely automated even in pro tools. Skip unless you specifically want it — low value for the effort. |
+| **Diachronics (sound change)** | 0% | No "proto-language evolves into daughter language" mechanism | New standalone module: apply a sequence of regular sound-change rules to an existing language, output a derived one. Medium-large effort, independent of everything else — could be built without touching syntax/morphology at all. |
+
+## Honest overall picture
+
+Your app is a **phonology generator with a lexicon patch layer** — genuinely solid at the one thing it does (how a language sounds), close to zero coverage on grammar (syntax especially), light on true phonetic accuracy and morphology, and no writing-system layer beyond passing through Unicode.
+
+**If you want to prioritize one next feature for real conlang depth**, in order of "most conlang-legitimacy per effort spent":
+1. **Morphology/affixes** — cheapest big win, PLGL already has the engine
+2. **Syntax (word order + basic case marking)** — hardest, but the single biggest thing separating "letter generator" from "language"
+3. **Phonetic/IPA modeling** — matters most if you care about scientific accuracy specifically, less about feature completeness
+
+Want to pick one and actually start building it, or is this more a scoping/roadmap check for now?
