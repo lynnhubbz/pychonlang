@@ -60,6 +60,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest # no compiling here, so a cheaper/faster runner is fine
+    permissions:
+      contents: write   # required for softprops/action-gh-release to create a release
 
     steps:
       # Pulls down the zip that `build` uploaded above.
