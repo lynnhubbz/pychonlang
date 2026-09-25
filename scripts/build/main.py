@@ -8,9 +8,9 @@ Usage:
 import argparse
 import subprocess
 import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent.parent  # scripts/build/pyside.py -> repo root
+from _core import ROOT, base_options, data_options, onefile_options, run_nuitka
+
 ENTRY_POINT = ROOT / "src" / "app" / "__main__.py"
 BRIDGE_PROJECT = ROOT / "src" / "bridge-net"
 BRIDGE_BIN = BRIDGE_PROJECT / "bin" / "Release" / "net8.0"
@@ -38,40 +38,6 @@ def build_bridge() -> None:
     subprocess.run(command, check=True)
 
 
-def base_options() -> list[str]:
-    """Options shared by every build mode."""
-    return [
-        "--standalone",
-        "--enable-plugin=pyside6",
-        "--assume-yes-for-downloads",
-        "--output-dir=build",
-        "--output-filename=PyChonLang.exe",
-    ]
-
-
-def data_options() -> list[str]:
-    """Non-Python files the app reads at runtime and must ship with the build."""
-    return [
-        # The compiled PLGL bridge (built above via `dotnet build`)
-        f"--include-raw-dir={BRIDGE_BIN}={BRIDGE_BIN.relative_to(ROOT)}",
-        # Language definitions and authoring docs shown inside the app
-        "--include-data-dir=assets=assets",   # replaces the two md-*.css include-data-files lines
-        "--include-data-dir=languages=languages",
-        "--include-data-dir=docs=docs",
-    ]
-
-
-def onefile_options() -> list[str]:
-    """Options that only apply when bundling into a single executable."""
-    options = [
-        "--onefile",
-        "--onefile-tempdir-spec={TEMP}/pychonlang_{PID}",
-    ]
-    if sys.platform == "win32":
-        options.append("--windows-console-mode=hide")
-    return options
-
-
 def build(onefile: bool, skip_dotnet: bool) -> None:
     if not skip_dotnet:
         build_bridge()
@@ -83,14 +49,17 @@ def build(onefile: bool, skip_dotnet: bool) -> None:
             f"  dotnet build {BRIDGE_PROJECT} -c Release"
         )
 
-    options = base_options() + data_options()
+    options = base_options("PyChonLang") + data_options([
+        # The compiled PLGL bridge (built above via `dotnet build`)
+        (str(BRIDGE_BIN), str(BRIDGE_BIN.relative_to(ROOT))),
+        "assets",
+        "languages",
+        "docs",
+    ])
     if onefile:
-        options += onefile_options()
+        options += onefile_options(tempdir_tag="pychonlang")
 
-    command = [sys.executable, "-m", "nuitka", *options, str(ENTRY_POINT)]
-
-    print("Running:", " ".join(command))
-    subprocess.run(command, check=True)
+    run_nuitka(ENTRY_POINT, options)
 
 
 if __name__ == "__main__":

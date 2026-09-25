@@ -39,7 +39,7 @@ jobs:
       # Runs the exact same build script used locally: dotnet build for
       # the bridge DLL, then Nuitka for the standalone exe.
       - name: Build
-        run: python scripts/build/pyside.py
+        run: python scripts/build/main.py
 
       # Zip whatever *.dist folder Nuitka actually produced — its exact
       # name can shift depending on Nuitka version/entry-point naming,
