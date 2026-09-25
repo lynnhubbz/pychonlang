@@ -16,8 +16,8 @@ from PySide6.QtWidgets import (
 if __package__:
     from .. import bridge
 else:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from src import bridge  
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import bridge  
 
 from paths import app_root
 
