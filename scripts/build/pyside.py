@@ -43,6 +43,7 @@ def base_options() -> list[str]:
     return [
         "--standalone",
         "--enable-plugin=pyside6",
+        "--assume-yes-for-downloads",
         "--output-dir=build",
         "--output-filename=PyChonLang.exe",
     ]
