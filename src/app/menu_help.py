@@ -3,7 +3,7 @@ import markdown2
 from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QApplication, QDialog, QTextBrowser, QVBoxLayout
 
-from app.paths import app_root
+from paths import app_root
 
 ASSETS = app_root() / "assets"
 
@@ -39,7 +39,6 @@ class HelpDialog(QDialog):
             self._browser.setPlainText(f"Missing: {self._path}")
             return
         css_file = ASSETS / ("md-dark.css" if _is_dark_mode() else "md-light.css")
-        print("CSS path:", css_file, "exists:", css_file.exists())  # temporary 
         css = css_file.read_text(encoding="utf-8") if css_file.exists() else ""
         body = markdown2.markdown(self._path.read_text(encoding="utf-8"), extras=GFM_EXTRAS)
         self._browser.setHtml(f"<style>{css}</style>{body}")
