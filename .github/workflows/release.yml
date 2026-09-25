@@ -1,0 +1,66 @@
+# Builds a Windows standalone release and publishes it whenever a version
+# tag (e.g. v0.1.0) is pushed. See scripts/build/pyside.py for the actual
+# build logic this workflow just invokes.
+name: Release
+
+on:
+  push:
+    tags:
+      # Only runs on tags shaped like v0.1.0, v1.2.3-beta, etc. — not on
+      # every commit to main. Trigger with:
+      #   git tag v0.1.0 && git push origin v0.1.0
+      - "v*"
+
+jobs:
+  build-windows:
+    # Spins up a clean Windows VM for this job. Nothing is pre-installed
+    # beyond what windows-latest ships with — every step below sets up
+    # a dependency from scratch, same as doing it by hand locally.
+    runs-on: windows-latest
+
+    steps:
+      # Clone the repo onto the VM.
+      # submodules: recursive is required — without it, src/lib/PLGL
+      # checks out as an EMPTY folder (git doesn't fetch submodule
+      # contents by default), and `dotnet build` fails immediately.
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Install the .NET SDK, needed to build the PLGL bridge DLL.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Install Python, matching the version used for local development.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      # Install runtime deps (pythonnet, PySide6, markdown2, ...) plus
+      # nuitka itself — nuitka isn't a runtime dependency, so it's not
+      # in requirements.txt, only needed here for this build step.
+      - run: pip install -r requirements.txt nuitka
+
+      # Runs the exact same build script used locally: dotnet build for
+      # the bridge DLL, then Nuitka for the standalone exe. If this step
+      # fails, the local build script is almost certainly failing too.
+      - name: Build
+        run: python scripts/build/pyside.py
+
+      # Package the standalone build folder into a single zip for
+      # distribution. github.ref_name is the tag that triggered this run
+      # (e.g. v0.1.0), so the filename is generated, not hardcoded.
+      #
+      # NOTE: verify `build\app.dist` is the actual output folder name —
+      # switching to package-mode compiling (-m app) may have changed
+      # this from the old `build\__main__.dist`.
+      - name: Zip standalone build
+        run: Compress-Archive -Path build\app.dist\* -DestinationPath pychonlang-${{ github.ref_name }}-windows.zip
+
+      # Creates (or attaches to) a GitHub Release matching the pushed tag
+      # and uploads the zip as a downloadable asset. This is the only
+      # step whose output end users actually see.
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: pychonlang-${{ github.ref_name }}-windows.zip
