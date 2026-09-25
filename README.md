@@ -5,4 +5,4 @@ Vibecoded, because, im struggling to understand conlang
 
 - [ ] Add docs
 - [ ] Build
-- [ ] 
+- [ ] use toml instead of JSON

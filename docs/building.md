@@ -19,7 +19,9 @@ python -m nuitka `
 --enable-plugin=pyside6 `
 --include-raw-dir=src\bridge-net\bin\Release\net8.0=src\bridge-net\bin\Release\net8.0 `
 --include-data-dir=languages=languages `     
---include-data-dir=docs=docs `                                          
+--include-data-dir=docs=docs `
+--include-data-files=src\app\md-dark.css=src\app\md-dark.css
+--include-data-files=src\app\md-light.css=src\app\md-light.css                                         
 --output-dir=build `                    
 src\app\__main__.py            
 ```
@@ -33,7 +35,9 @@ python -m nuitka `
 --enable-plugin=pyside6 `                                                              
 --include-raw-dir=src\bridge-net\bin\Release\net8.0=src\bridge-net\bin\Release\net8.0 `
 --include-data-dir=languages=languages `  
---include-data-dir=docs=docs `                                             
+--include-data-dir=docs=docs
+--include-data-files=src\app\md-dark.css=src\app\md-dark.css
+--include-data-files=src\app\md-light.css=src\app\md-light.css`                                             
 --onefile-tempdir-spec="{TEMP}/pychonlang_{PID}" `
 --output-dir=build `                              
 src\app\__main__.py 
