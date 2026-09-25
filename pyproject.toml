@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conlang-engine-desktop"
+version = "0.1.0"
+description = "Offline desktop wrapper for ConlangEngine"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6",
+]
+
+[tool.setuptools]
+packages = ["src", "src.desktop"]

@@ -1,0 +1,4 @@
+[submodule "src/ConlangEngine"]
+	path = src/ConlangEngine
+	url = https://github.com/lynnhubbz/ConlangEngine-Offline.git
+	branch = main-app
