@@ -12,17 +12,20 @@ from PySide6.QtWidgets import (
     QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 
+
 if __package__:
     from .. import bridge
 else:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from src import bridge
 
-if "__compiled__" in globals():
-    ROOT = Path(__file__).resolve().parent
-else:
-    ROOT = Path(__file__).resolve().parents[2]
+_SRC_DIR = Path(__file__).resolve().parent.parent
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
 
+from app.paths import app_root
+
+ROOT = app_root()
 LANG_DIR = ROOT / "languages"
 
 RULE_TYPES = {
@@ -228,8 +231,16 @@ class Main(QMainWindow):
 
         help_menu = self.menuBar().addMenu("&Help")
         a = QAction("&Authoring Guide", self)
-        a.triggered.connect(lambda: HelpDialog(ROOT / "docs", parent=self).exec())
+        a.triggered.connect(lambda: HelpDialog(
+            ROOT / "docs", parent=self
+        ).exec())
         help_menu.addAction(a)
+
+        a2 = QAction("&About PLGL", self)
+        a2.triggered.connect(lambda: HelpDialog(
+            ROOT / "docs", doc_name="doc-lib.md", parent=self
+        ).exec())
+        help_menu.addAction(a2)
 
         self.load(LANG_DIR / "example.json")
         self.inp.setPlainText("Hello, the field of Enna is ablaze with flowers!")
