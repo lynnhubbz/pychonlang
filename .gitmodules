@@ -1,3 +1,6 @@
 [submodule "src/lib/PLGL"]
 	path = src/lib/PLGL
 	url = https://github.com/lynnhubbz/PLGLib.git
+[submodule "src/lib/ConlangEngine"]
+	path = src/lib/ConlangEngine
+	url = https://github.com/lynnhubbz/ConlangEngine.git

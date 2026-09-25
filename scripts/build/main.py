@@ -12,7 +12,7 @@ import sys
 from _core import ROOT, base_options, data_options, onefile_options, run_nuitka
 
 ENTRY_POINT = ROOT / "src" / "app" / "__main__.py"
-BRIDGE_PROJECT = ROOT / "src" / "bridge-net"
+BRIDGE_PROJECT = ROOT / "src" / "csharp"
 BRIDGE_BIN = BRIDGE_PROJECT / "bin" / "Release" / "net8.0"
 
 
@@ -55,6 +55,7 @@ def build(onefile: bool, skip_dotnet: bool) -> None:
         "assets",
         "languages",
         "docs",
+        "src/js/dist",
     ])
     if onefile:
         options += onefile_options(tempdir_tag="pychonlang")

@@ -1,4 +1,4 @@
-Vibecoded, because, im struggling to understand conlang
+Desktop Offline Conlanging
 
 
 ## Todo
