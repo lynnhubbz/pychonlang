@@ -1,23 +1,18 @@
 from pathlib import Path
-import sys
 import markdown2
 from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QApplication, QDialog, QTextBrowser, QVBoxLayout
 
-_SRC_DIR = Path(__file__).resolve().parent.parent
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
-
 from app.paths import app_root
 
-
+ASSETS = app_root() / "assets"
 
 # unchanged below — css_file = ASSETS / ("md-dark.css" if _is_dark_mode() else "md-light.css")
 
 GFM_EXTRAS = ["tables", "fenced-code-blocks", "strike", "task_list",
               "header-ids", "code-friendly", "cuddled-lists"]
 
-ASSETS = app_root() / "assets"
+
 
 
 def _is_dark_mode() -> bool:

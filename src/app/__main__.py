@@ -19,11 +19,15 @@ else:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from src import bridge
 
-_SRC_DIR = Path(__file__).resolve().parent.parent
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
+if "__compiled__" not in globals():
+    # Only needed for `python src/app` dev runs — Nuitka's compiled
+    # package already resolves `app.*` imports correctly on its own.
+    _SRC_DIR = Path(__file__).resolve().parent.parent
+    if str(_SRC_DIR) not in sys.path:
+        sys.path.insert(0, str(_SRC_DIR))
 
 from app.paths import app_root
+# ...rest unchanged
 
 ROOT = app_root()
 LANG_DIR = ROOT / "languages"
