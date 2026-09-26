@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, Signal
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QFontDatabase, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QFormLayout,
     QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow, QMessageBox,
@@ -15,9 +15,11 @@ from PySide6.QtWidgets import (
 
 if __package__:
     from .. import bridge
+    from ..bridge.morphology import Morphology
 else:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    import bridge  
+    import bridge
+    from bridge.morphology import Morphology
 
 from paths import app_root
 
@@ -114,6 +116,7 @@ class Main(QMainWindow):
         self.loading = False
         self.timer = QTimer(self, singleShot=True, interval=300)
         self.timer.timeout.connect(self.preview)
+        self.morph = Morphology(ROOT / "src" / "bridge" / "js" / "dist" / "ce-bundle.js")
 
         # --- General tab
         self.name, self.author, self.desc = QLineEdit(), QLineEdit(), QLineEdit()
@@ -176,9 +179,33 @@ class Main(QMainWindow):
         self.punct = TableEditor([("Mark", None), ("Becomes", None)],
                                  "Replace punctuation marks. Unlisted marks stay as-is.")
 
+        # --- Morphology tab (ConlangEngine's morphology engine)
+        self.morph_rules = TableEditor(
+            [("Name", None), ("Affix", None),
+             ("Condition", ["always", "vowel", "consonant"]), ("Word class", None)],
+            "Affix: -ta = suffix, ka- = prefix, -in-@V = infix after 1st vowel, "
+            "a => e = regex replace.\nCondition: only apply when the word ends in a vowel / consonant.")
+        self.persons = QPlainTextEdit(placeholderText="Optional person markers, one per line:\n1S: mi/-m\n2S: ti/-t")
+        self.persons.setMaximumHeight(90)
+        self.test_word = QLineEdit(placeholderText="Test word, e.g. kira")
+        self.test_class = QLineEdit(placeholderText="Word class, e.g. noun (blank = all)")
+        self.paradigm = QPlainTextEdit(readOnly=True)
+        self.paradigm.setFont(QFontDatabase.systemFont(QFontDatabase.FixedFont))
+        morph_tab = QWidget()
+        ml = QVBoxLayout(morph_tab)
+        ml.addWidget(self.morph_rules, 3)
+        ml.addWidget(QLabel("Persons (optional)"))
+        ml.addWidget(self.persons)
+        test_row = QHBoxLayout()
+        test_row.addWidget(self.test_word)
+        test_row.addWidget(self.test_class)
+        ml.addLayout(test_row)
+        ml.addWidget(self.paradigm, 2)
+
         tabs = QTabWidget()
         for w, t in [(gen, "General"), (let, "Letters"), (struct, "Structure"),
-                     (self.rules, "Rules"), (words, "Words"), (self.punct, "Punctuation")]:
+                     (self.rules, "Rules"), (morph_tab, "Morphology"),
+                     (words, "Words"), (self.punct, "Punctuation")]:
             tabs.addTab(w, t)
 
         # --- Preview side
@@ -210,8 +237,12 @@ class Main(QMainWindow):
             w.valueChanged.connect(self.touch)
         self.casing.toggled.connect(self.touch)
         self.pathing.currentTextChanged.connect(self.touch)
-        for t in (self.groups, self.syls, self.rules, self.vocab, self.roots, self.punct):
+        for t in (self.groups, self.syls, self.rules, self.vocab, self.roots, self.punct,
+                  self.morph_rules):
             t.changed.connect(self.touch)
+        self.persons.textChanged.connect(self.touch)
+        self.test_word.textChanged.connect(self.timer.start)
+        self.test_class.textChanged.connect(self.timer.start)
         self.inp.textChanged.connect(self.timer.start)
 
         # --- menu
@@ -272,6 +303,11 @@ class Main(QMainWindow):
             "vocabulary": {k: v for k, v in self.vocab.rows()},
             "roots": {k: v for k, v in self.roots.rows()},
             "punctuation": {k: v for k, v in self.punct.rows()},
+            "morphology": {
+                "rules": [{"name": n, "affix": a, "condition": c, "appliesTo": w or "all"}
+                          for n, a, c, w in self.morph_rules.rows() if a],
+                "persons": self.persons.toPlainText().strip(),
+            },
         }
 
     def from_dict(self, d):
@@ -295,6 +331,11 @@ class Main(QMainWindow):
         self.vocab.set_rows(list(d.get("vocabulary", {}).items()))
         self.roots.set_rows(list(d.get("roots", {}).items()))
         self.punct.set_rows(list(d.get("punctuation", {}).items()))
+        m = d.get("morphology", {})
+        self.morph_rules.set_rows([[r.get("name", ""), r.get("affix", ""),
+                                    r.get("condition", "always"), r.get("appliesTo", "all")]
+                                   for r in m.get("rules", [])])
+        self.persons.setPlainText(m.get("persons", ""))
         self.loading = False
 
     # ---------------- validation + preview
@@ -325,8 +366,23 @@ class Main(QMainWindow):
             self.setWindowModified(True)
             self.timer.start()
 
+    def update_paradigm(self, d):
+        word = self.test_word.text().strip()
+        if not word:
+            self.paradigm.setPlainText("")
+            return
+        try:
+            rows = self.morph.paradigm(word, d, self.test_class.text().strip())
+            self.paradigm.setPlainText("\n".join(
+                f"{r['ruleName']:<16} {'' if r['personName'] == 'BASE' else r['personName']:<4} "
+                f"{r['result'] or '— (condition not met)'}"
+                for r in rows))
+        except Exception as e:  # JS errors surface here
+            self.paradigm.setPlainText(f"⚠ Morphology error: {str(e).splitlines()[0]}")
+
     def preview(self):
         d = self.to_dict()
+        self.update_paradigm(d)
         err = self.validate(d)
         if err:
             self.status.setText(f"⚠ {err}")
@@ -376,6 +432,7 @@ class Main(QMainWindow):
                 self.save()
             elif r == QMessageBox.Cancel:
                 return e.ignore()
+        self.morph.close()
         e.accept()
 
 
