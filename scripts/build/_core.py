@@ -29,10 +29,26 @@ def data_options(items: list) -> list[str]:
     from the source, e.g. ("src/ConlangEngine/dist", "web").
     """
     options = []
+
+    if (ROOT / "LICENSE").is_file():
+        options.append("--include-data-files=LICENSE=LICENSE")
+    if (ROOT / "README.md").is_file():
+        options.append("--include-data-files=README.md=README.md")
+
     for item in items:
         source, dest = item if isinstance(item, tuple) else (item, item)
-        options.append(f"--include-data-dir={source}={dest}")
+
+        if source == "LICENSE":
+            continue  # already added above
+
+        if (ROOT / source).is_dir():
+            options.append(f"--include-data-dir={source}={dest}")
+        else:
+            options.append(f"--include-data-files={source}={dest}")
+
     return options
+
+
 
 
 def onefile_options(tempdir_tag: str) -> list[str]:
