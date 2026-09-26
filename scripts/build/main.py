@@ -1,9 +1,9 @@
 """Build pychonlang into a standalone (or onefile) executable via Nuitka.
 
 Usage:
-    python scripts/build/pyside.py                    # standalone folder build
-    python scripts/build/pyside.py --onefile           # single-file build
-    python scripts/build/pyside.py --skip-dotnet       # reuse an already-built bridge DLL
+    python scripts/build/main.py                    # standalone folder build
+    python scripts/build/main.py --onefile           # single-file build
+    python scripts/build/main.py --skip-dotnet       # reuse an already-built bridge DLL
 """
 import argparse
 import subprocess
@@ -14,6 +14,11 @@ from _core import ROOT, base_options, data_options, onefile_options, run_nuitka
 ENTRY_POINT = ROOT / "src" / "app" / "__main__.py"
 BRIDGE_PROJECT = ROOT / "src" / "bridge" / "net"
 BRIDGE_BIN = BRIDGE_PROJECT / "bin" / "Release" / "net8.0"
+
+JS_ENTRY = ROOT / "src" / "bridge" / "js" / "entry.js"
+JS_DIST = ROOT / "src" / "bridge" / "js" / "dist"
+
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,16 +36,26 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_bridge() -> None:
+def build_net() -> None:
     """Compile the PLGL bridge DLL via dotnet before Nuitka needs it."""
     command = ["dotnet", "build", str(BRIDGE_PROJECT), "-c", "Release"]
     print("Running:", " ".join(command))
     subprocess.run(command, check=True)
 
+def build_js() -> None:
+    """Bundle ConlangEngine modules into one file for mini-racer."""
+    command = [
+        "npx", "esbuild", str(JS_ENTRY), "--bundle", "--format=iife",
+        "--global-name=CE", f"--outfile={JS_DIST / 'ce-bundle.js'}", "--loader:.jsx=jsx",
+    ]
+    print("Running:", " ".join(command))
+    subprocess.run(command, check=True, shell=(sys.platform == "win32"))  # npx is npx.cmd on Windows
+
 
 def build(onefile: bool, skip_dotnet: bool) -> None:
     if not skip_dotnet:
-        build_bridge()
+        build_net()
+        build_js()
 
     if not BRIDGE_BIN.exists():
         sys.exit(
@@ -55,7 +70,7 @@ def build(onefile: bool, skip_dotnet: bool) -> None:
         "assets",
         "languages",
         "docs",
-        "src/js/dist",
+        "src/bridge/js/dist",
     ])
     if onefile:
         options += onefile_options(tempdir_tag="pychonlang")

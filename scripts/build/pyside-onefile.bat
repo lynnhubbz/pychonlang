@@ -1,3 +1,3 @@
 @echo off
-python "%~dp0..\..\scripts\build\pyside.py" --onefile --skip-dotnet
+python "%~dp0main.py" --onefile --skip-dotnet
 pause

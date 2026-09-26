@@ -1,7 +1,6 @@
 """Shared Nuitka build helpers.
 
-Not run directly — see pyside.py (pychonlang) and conlangengine.py
-(offline ConlangEngine desktop wrapper), which both import from here.
+Not run directly — see pyside.py (pychonlang), which both import from here.
 """
 import subprocess
 import sys
