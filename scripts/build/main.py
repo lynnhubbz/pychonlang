@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip the dotnet build step (use an already-built bridge DLL).",
     )
+    parser.add_argument(
+        "--skip-js",
+        action="store_true",
+        help="Skip the esbuild step (use an already-built JS bundle).",
+    )
     return parser.parse_args()
 
 
@@ -52,9 +57,10 @@ def build_js() -> None:
     subprocess.run(command, check=True, shell=(sys.platform == "win32"))  # npx is npx.cmd on Windows
 
 
-def build(onefile: bool, skip_dotnet: bool) -> None:
+def build(onefile: bool, skip_dotnet: bool, skip_js: bool) -> None:
     if not skip_dotnet:
         build_net()
+    if not skip_js:
         build_js()
 
     if not BRIDGE_BIN.exists():
@@ -65,13 +71,13 @@ def build(onefile: bool, skip_dotnet: bool) -> None:
         )
 
     options = base_options("PyChonLang") + data_options([
-        # The compiled PLGL bridge (built above via `dotnet build`)
         (str(BRIDGE_BIN), str(BRIDGE_BIN.relative_to(ROOT))),
         "assets",
         "languages",
         "docs",
         "src/bridge/js/dist",
     ])
+    options += ["--include-package-data=py_mini_racer"]   # ← fix 1: mini-racer's data file
     if onefile:
         options += onefile_options(tempdir_tag="pychonlang")
 
@@ -80,4 +86,4 @@ def build(onefile: bool, skip_dotnet: bool) -> None:
 
 if __name__ == "__main__":
     args = parse_args()
-    build(onefile=args.onefile, skip_dotnet=args.skip_dotnet)
+    build(onefile=args.onefile, skip_dotnet=args.skip_dotnet, skip_js=args.skip_js)
